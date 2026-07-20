@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", sans-serif;
+    background: #f4f4f2;
+    color: #1c1c1a;
+    display: flex;
+    justify-content: center;
+    padding: 48px 16px;
+    min-height: 100vh;
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e0d8;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 440px;
+  }
+  h1 {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  p.sub {
+    font-size: 13px;
+    color: #6f6d64;
+    margin: 0 0 24px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #44433d;
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  input[type="text"] {
+    flex: 1;
+    height: 42px;
+    border: 1px solid #d8d6cc;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 14px;
+    outline: none;
+    background: #fbfbf9;
+  }
+  input[type="text"]:focus {
+    border-color: #b45b34;
+    background: #fff;
+  }
+  button {
+    height: 42px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: none;
+    background: #b45b34;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  button:hover { background: #9c4d2b; }
+  button:disabled { background: #cfcdc4; cursor: not-allowed; }
+  .result {
+    margin-top: 28px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .result.show { display: flex; }
+  #qrcode {
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e2e0d8;
+    border-radius: 12px;
+  }
+  #qrcode img, #qrcode canvas {
+    display: block;
+  }
+  .url-display {
+    font-size: 12px;
+    color: #6f6d64;
+    word-break: break-all;
+    text-align: center;
+    max-width: 100%;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+  .actions button {
+    background: #fff;
+    color: #1c1c1a;
+    border: 1px solid #d8d6cc;
+  }
+  .actions button:hover { background: #f4f4f2; }
+  .error {
+    color: #b02a2a;
+    font-size: 12px;
+    margin-top: 8px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>สร้าง QR Code จากลิงก์</h1>
+    <p class="sub">กรอกลิงก์แล้วกด "สร้าง QR" ใช้งานได้ไม่จำกัด ไม่มีโฆษณา</p>
+
+    <label for="linkInput">ลิงก์</label>
+    <div class="input-row">
+      <input type="text" id="linkInput" placeholder="https://example.com" />
+      <button id="generateBtn">สร้าง QR</button>
+    </div>
+    <div class="error" id="errorMsg">กรุณากรอกลิงก์ก่อนสร้าง QR code</div>
+
+    <div class="result" id="result">
+      <div id="qrcode"></div>
+      <div class="url-display" id="urlDisplay"></div>
+      <div class="actions">
+        <button id="downloadBtn">ดาวน์โหลด PNG</button>
+        <button id="clearBtn">ล้างค่า</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const linkInput = document.getElementById('linkInput');
+  const generateBtn = document.getElementById('generateBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const result = document.getElementById('result');
+  const qrcodeDiv = document.getElementById('qrcode');
+  const urlDisplay = document.getElementById('urlDisplay');
+  const errorMsg = document.getElementById('errorMsg');
+
+  let qrInstance = null;
+
+  function generate() {
+    const value = linkInput.value.trim();
+    if (!value) {
+      errorMsg.style.display = 'block';
+      result.classList.remove('show');
+      return;
+    }
+    errorMsg.style.display = 'none';
+    qrcodeDiv.innerHTML = '';
+    qrInstance = new QRCode(qrcodeDiv, {
+      text: value,
+      width: 240,
+      height: 240,
+      colorDark: "#1c1c1a",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    urlDisplay.textContent = value;
+    result.classList.add('show');
+  }
+
+  function downloadPng() {
+    const img = qrcodeDiv.querySelector('img');
+    const canvas = qrcodeDiv.querySelector('canvas');
+    const dataUrl = img && img.src ? img.src : (canvas ? canvas.toDataURL('image/png') : null);
+    if (!dataUrl) return;
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'qrcode.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function clearAll() {
+    linkInput.value = '';
+    qrcodeDiv.innerHTML = '';
+    result.classList.remove('show');
+    errorMsg.style.display = 'none';
+    linkInput.focus();
+  }
+
+  generateBtn.addEventListener('click', generate);
+  linkInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') generate();
+  });
+  downloadBtn.addEventListener('click', downloadPng);
+  clearBtn.addEventListener('click', clearAll);
+</script>
+</body>
+</html>
